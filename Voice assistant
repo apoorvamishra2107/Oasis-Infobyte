@@ -1,0 +1,66 @@
+import speech_recognition as sr
+import pyttsx3
+import openai
+import sys
+
+openai.api_key = "your key"
+
+r = sr.Recognizer()
+engine = pyttsx3.init()
+
+engine.setProperty('voice', 'en-us')
+engine.setProperty('rate', 200)
+
+def speak(text):
+    engine.say(text)
+    engine.runAndWait()
+
+def chat():
+    response = openai.Completion.create(
+      model="text-davinci-003",
+      prompt='\n'.join(conversation),
+      temperature=0.9,
+      max_tokens=1000,
+      top_p=1,
+      frequency_penalty=0.0,
+      presence_penalty=0.6,
+    )
+
+    return response
+
+conversation = list()
+conversation.append("The following is a conversation with an AI. This AI is helpful, creative, clever and very friendly. AI's name is Olia.")
+
+while True:
+    try:
+        with sr.Microphone() as source:
+            r.adjust_for_ambient_noise(source, duration=0.2)
+
+            print("User: ", end='')
+            sys.stdout.flush()
+
+            audio = r.listen(source)
+
+            text = r.recognize_google(audio, show_all=True, language="en-US")
+
+            if (text == []): continue
+            
+            text = text['alternative'][0]['transcript']
+
+            print(text)
+            
+            conversation.append("Human: " + text)
+            conversation.append("Olia: ")
+                
+            res = chat()
+            conversation.append(res.choices[0].text.strip())
+
+            print('Olia:', conversation[-1])
+
+            speak(conversation[-1])
+
+    except sr.RequestError as e:
+        print(f"Could not request results: {e}")
+
+    except sr.UnknownValueError:
+        print("Unknown Error")
